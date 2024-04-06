@@ -1,0 +1,5 @@
+data/
+sql/
+backup/
+venv/
+**/.DS_Store
