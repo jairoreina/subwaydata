@@ -1,8 +1,7 @@
 import polars as pl
-import sqlite3
-import shutil
+from sqlalchemy import create_engine, text
+import psycopg2
 import re
-import os
 
 def add_dec_prec(row):
     """
@@ -56,6 +55,9 @@ def get_ridership():
 
     rename_mapping = {col: clean_column_name(col) for col in ridership.columns}
     ridership = ridership.rename(rename_mapping)
+    
+    #Since we got rid of the shuttle and TRAM lines, we filter them out here too.
+    ridership = ridership.filter(~pl.col("station_complex_id").str.contains("TRAM")).filter(~pl.col("station_complex_id").str.contains("141"))
     return ridership
 
 def get_stations(subset_df):
@@ -79,6 +81,15 @@ def get_stations(subset_df):
     df_with_precision = df_with_precision.sort(['station_complex_id', 'total_precision'], descending=[False, True]).unique(subset=["station_complex_id"])
 
     stations = df_with_precision.select(["station_complex_id", "station_complex", "borough", "latitude", "longitude"]).unique().sort("station_complex_id")
+    stations = stations.with_columns(
+        pl.col("station_complex")
+        .str.replace_all(r"\,S", "")
+        .str.replace_all(r"\(110 St\)", "- 110 St")
+        .str.replace_all(r"\/Botanic Garden \(S\)", "")
+        .str.strip_chars()
+        ).filter(~pl.col("station_complex_id").str.contains("TRAM")
+        ).filter(~pl.col("station_complex").str.contains(r"\(S\)")
+        ).sort("station_complex_id")
     return stations
 
 def get_routes(stations):
@@ -90,17 +101,13 @@ def get_routes(stations):
     station_list = stations["station_complex"].to_list()
     regex_pattern = r"\(([^)]+)\)"
 
-    station_exclusions = ["110 St", "Manhattan", "Roosevelt"]
-
     unique_train_lines = set()
 
     for station in station_list:
         matches = re.findall(regex_pattern, station)
         if matches:
             for line in matches[0].split(','):
-                line = line.strip()
-                if line not in station_exclusions:
-                    unique_train_lines.add(line)
+                unique_train_lines.add(line.strip())
 
     routes = pl.DataFrame({
         "route_name": sorted(list(unique_train_lines))
@@ -115,12 +122,18 @@ def get_station_routes(stations):
     :returns: Returns a polars dataframe of the station_routes table.
     """
     station_routes = stations.with_columns(
-        pl.col("station_complex").str.extract(r"\((.*?)\)").alias("routes")
-    ).with_columns(
-        pl.col("routes").str.split(",").alias("route_list")
-    )
+        pl.col("station_complex")
+        .str.extract_all(r"\((.*?)\)")
+        .map_elements(lambda groups: ','.join(groups), return_dtype=str)
+        .str.replace_all(r"\(", "")
+        .str.replace_all(r"\)", "")
+        .str.split(",")
+        .alias("route_list"))
 
+    # Step 3: Explode the list into separate rows
     stations_exploded = station_routes.explode("route_list")
+
+    # Step 4: Select and rename columns to fit the SQL schema, remove duplicates
     station_routes = stations_exploded.select([
         pl.col("station_complex_id"),
         pl.col("route_list").alias("route_name")
@@ -131,23 +144,19 @@ def get_station_routes(stations):
 
 def main():
     print("Creating the database...")
-    
-    db_path = "data/subway.db"
-    
-    with open("sql/tables.sql", "r") as file:
-        tables_sql = file.read()
-    
-    # Using a context manager to manage the SQLite connection
-    with sqlite3.connect(db_path) as conn:
-        for statement in tables_sql.strip().split(';'):
-            if statement:
-                conn.execute(statement)
+    engine  = create_engine('postgresql://conductor:train0109@localhost/subway')
+
+    with engine.connect() as conn:
+        with open("sql/tables.sql", "r") as file:
+            query = text(file.read())
+            conn.execute(query)
         
-        # Populate the tables
-        # Note: within this context manager, the changes will be automatically committed upon successful completion
         print("Creating the subset dataframes...")
-        subset_df = pl.read_parquet("data/hist.parquet", n_rows=10_000_000, row_index_offset=10_000_000)
+        subset_df = pl.read_parquet("data/hist.parquet", n_rows=30_000_000, low_memory=True)
+        
         stations = get_stations(subset_df)
+        stations_clean = stations.with_columns(pl.col("station_complex").str.replace_all(r"\([^)]*\)", ""))
+        
         routes = get_routes(stations)
         station_routes = get_station_routes(stations)
         
@@ -155,11 +164,13 @@ def main():
         ridership = get_ridership()
 
         print("Populating the tables with data...")
-        stations.to_pandas().to_sql('stations', conn, if_exists='replace', index=False)
-        routes.to_pandas().to_sql('routes', conn, if_exists='replace', index=False)
-        station_routes.to_pandas().to_sql('station_routes', conn, if_exists='replace', index=False)
-        ridership.to_pandas().to_sql('ridership', conn, if_exists='replace', index=False)
+        stations_clean.to_pandas().to_sql('stations', conn, if_exists='append', index=False)
+        routes.to_pandas().to_sql('routes', conn, if_exists='append', index=False)
+        station_routes.to_pandas().to_sql('station_routes', conn, if_exists='append', index=False)
+        ridership.to_pandas().to_sql('ridership', conn, if_exists='append', index=False)
     
+        conn.commit()
+        
     print("Done creating the subway database!")
     
     
