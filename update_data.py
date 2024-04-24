@@ -1,10 +1,9 @@
 import requests
 import re
 from datetime import datetime, timedelta
+from sqlalchemy import create_engine, text
 import polars as pl
-import os
-import shutil
-import sqlite3
+
 
 def clean_column_name(name):
     """Cleans up the column names and returns the cleaned name as a string."""
@@ -30,13 +29,14 @@ def get_data(ses):
     last_update_string = pl.read_csv(response.content)["transit_timestamp"][0]
     last_update_datetime = datetime.fromisoformat(last_update_string)
 
-    two_weeks_prior = last_update_datetime - timedelta(days=14)
+    days_of_history = 30
+    two_weeks_prior = last_update_datetime - timedelta(days=days_of_history)
     rounded_two_weeks = datetime(year=two_weeks_prior.year, month=two_weeks_prior.month, day=two_weeks_prior.day)
 
     print(f"Getting data from {rounded_two_weeks.isoformat()} and {last_update_datetime.isoformat()}...")
     params = {
         "$where": f"transit_timestamp between'{rounded_two_weeks.isoformat()}' and '{last_update_datetime.isoformat()}'",
-        "$limit": 1_500_000
+        "$limit": days_of_history * 100_000
     }
     response = ses.get(url, params=params)
     
@@ -71,49 +71,49 @@ def format_df(df):
 
     rename_mapping = {col: clean_column_name(col) for col in ridership.columns}
     ridership = ridership.rename(rename_mapping)
+    
+    #Since we got rid of the shuttle and TRAM lines, we filter them out here too.
+    ridership = ridership.filter(~pl.col("station_complex_id").str.contains("TRAM")).filter(~pl.col("station_complex_id").str.contains("141"))
     return ridership
 
 def upsert_data(conn, df):
     """
-    Connects to the database and updates the data. We perform a REPLACE for any revisions
-    that are picked up. Since the transit_timestamp column is of type datetime, we transform
-    to ISO8061 string so SQLite3 can properly update the database.
+    Connects to the database and updates the data. We perform an UPSERT for any revisions
+    that are picked up.
     """
     print("Updating ridership table...")
     columns = [col for col in df.columns if col != 'entry_id']
     sql_columns = ', '.join(columns)
-    sql_placeholders = ', '.join(['?'] * len(columns))
+    sql_placeholders = ', '.join([f":{col}" for col in columns])
+
+    on_conflict_columns = ["transit_timestamp", "station_complex_id"]
+    conflict_target = ', '.join(on_conflict_columns)
+    update_expressions = ', '.join([f"{col}=EXCLUDED.{col}" for col in columns if col not in on_conflict_columns])
     
     upsert_sql = f"""
-    REPLACE INTO ridership ({sql_columns})
-    VALUES ({sql_placeholders});
+    INSERT INTO ridership ({sql_columns})
+    VALUES ({sql_placeholders})
+    ON CONFLICT ({conflict_target})
+    DO UPDATE SET {update_expressions};
     """
 
-    for row in df.to_pandas().itertuples(index=False, name=None):
-        row_list = list(row)
-        for i, elem in enumerate(row_list):
-            if isinstance(elem, datetime):
-                row_list[i] = elem.isoformat(' ')
-        conn.execute(upsert_sql, tuple(row_list))
-    conn.commit()
+    statement = text(upsert_sql)
+    dict_list = df.to_pandas().to_dict(orient="records")
+
+    for row_dict in dict_list:
+        conn.execute(statement, row_dict)
+
 
 def main():
     with requests.session() as ses:
         df = get_data(ses)
     ridership = format_df(df)
-    
-    db_path = "data/subway.db"
-    backup_path = "backup/subway_backup.db"
-    
-    if not os.path.exists("backup"):
-        os.makedirs("backup")
-    
-    if os.path.exists(db_path):
-        print("Backing up the current database...")
-        shutil.copyfile(db_path, backup_path)
         
-    with sqlite3.connect("data/subway.db") as conn:
+    engine = create_engine('postgresql://conductor:train0109@localhost/subway')
+    with engine.connect() as conn:
         upsert_data(conn, ridership)
+        conn.commit()
+        
     print("Done updating ridership data!")
         
 if __name__ == "__main__":
