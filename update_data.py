@@ -29,7 +29,7 @@ def get_data(ses):
     last_update_string = pl.read_csv(response.content)["transit_timestamp"][0]
     last_update_datetime = datetime.fromisoformat(last_update_string)
 
-    days_of_history = 30
+    days_of_history = 14
     two_weeks_prior = last_update_datetime - timedelta(days=days_of_history)
     rounded_two_weeks = datetime(year=two_weeks_prior.year, month=two_weeks_prior.month, day=two_weeks_prior.day)
 
