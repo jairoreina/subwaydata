@@ -3,3 +3,4 @@ sql/
 backup/
 venv/
 **/.DS_Store
+prompt.txt
