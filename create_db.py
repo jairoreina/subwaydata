@@ -48,9 +48,14 @@ def get_ridership():
         ["transit_timestamp", "station_complex_id"], descending=[False, False]
     ).fill_null(0)
 
+    metrocard_columns = [col for col in ridership_wide.columns if "Metrocard" in col]
+    omny_columns = [col for col in ridership_wide.columns if "OMNY" in col]
     ridership_columns = [col for col in ridership_wide.columns if "Metrocard" in col or "OMNY" in col]
+
     ridership = ridership_wide.with_columns(
-        total_ridership=pl.sum_horizontal(col for col in ridership_columns)
+        total_metrocard_ridership=pl.sum_horizontal(col for col in metrocard_columns),
+        total_omny_ridership=pl.sum_horizontal(col for col in omny_columns),
+        total_ridership=pl.sum_horizontal(col for col in ridership_columns),
     )
 
     rename_mapping = {col: clean_column_name(col) for col in ridership.columns}
@@ -155,7 +160,7 @@ def main():
         subset_df = pl.read_parquet("data/hist.parquet", n_rows=30_000_000, low_memory=True)
         
         stations = get_stations(subset_df)
-        stations_clean = stations.with_columns(pl.col("station_complex").str.replace_all(r"\([^)]*\)", ""))
+        stations_clean = stations.with_columns(pl.col("station_complex").str.replace_all(r"\([^)]*\)", "").str.strip_chars())
         
         routes = get_routes(stations)
         station_routes = get_station_routes(stations)
