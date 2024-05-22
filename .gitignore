@@ -3,4 +3,6 @@ sql/
 backup/
 venv/
 **/.DS_Store
-prompt.txt
+initial_prompt.txt
+*.pyc
+__pycache__/
