@@ -55,4 +55,4 @@ def get_html(response_json):
     with engine.connect() as conn:
         results = conn.execute(text(response_json["sql"]))
     query_result = results.mappings().all()
-    return pd.DataFrame(query_result).to_html()
+    return pd.DataFrame(query_result).to_html(index=False)

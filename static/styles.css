@@ -57,14 +57,19 @@ body, html {
 
 /* MAIN CONTAINER */
 #main-container {
-    margin-top: 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 50%; /* Adjusted to 75% */
     max-width: 1200px; /* Add a max-width for larger screens */
     margin: 0 auto; /* Center the container */
-    margin-top: 30px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+/* ABOUT PAGE */
+#about-text {
+    text-align: left;
 }
 
 /* MAIN HEADER */
@@ -114,6 +119,11 @@ body, html {
     height: auto;
 }
 
+/* INSTRUCTIONS */
+#instructions {
+    font-size: 15px;
+}
+
 /* RESULTS */
 #results {
     align-items: center;
@@ -127,6 +137,7 @@ body, html {
     overflow: hidden;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
     width: 90%;
+    margin: 0 auto;
 }
 
 #results th {

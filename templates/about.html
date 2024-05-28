@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <title>Subway Data</title>
+</head>
+<body>
+    <div id="header-area">
+        <div id="header">
+            <ul>        
+                <li><img src="{{ url_for('static', filename='subwaydata_logo.svg') }}" alt="MTA Subway Data Explorer" class="logo"></li>    
+                <li><a class="active" href="{{ url_for('index') }}">Explore</a></li>
+                <li><a href="{{ url_for('get_about') }}">About the Data</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="main-container">
+        <div id="about-text">
+            <h1>About Data Explorer</h1>
+            <h3>How to use the Data Explorer</h3>
+            <p>Enter any natural language query or question in the Data Explorer search bar. If your query includes a station name, make sure to mention at least one train line that services that station. This greatly improves the querying as many stations have the same name, so specifying which one you are referencing is important.</p>
+            
+            <h3>Why the Data Explorer?</h3>
+            <p>The MTA publishes great subway usage data, however, there wasn't an easy way to query these data without downloading the large history file yourself or using SQL/SOQL with their API directly. With the Data Explorer, users can easily query and visualize the data. </p>
+
+            <h3>What data and time span are available?</h3>
+            <p>NYC Subway data are sourced from the MTA and includes hourly ridership data for every station since February 2022 and are published with a two week lag. </p>
+            <p>Not only is there general ridership data, but also more granular detail on fare types. These fare types are:</p>
+            <ul>
+                <li>Metrocard: Fair-fare, student, senior & disability, full fare, unlimited 7-day, unlimited 30-day, and other.</li>
+                <li>OMNY: Full fare, senior & disability, and other.</li>
+            </ul>
+
+            <h3>Is this project or are you in any way associated with the MTA?</h3>
+            <p>No. I just like trains a lot and thought this data is really cool to work with. I hope other people can enjoy this or find it useful as well. You can find more information about these data at the <a href="https://data.ny.gov/Transportation/MTA-Subway-Hourly-Ridership-Beginning-February-202/wujg-7c2s/about_data">official NYS open data platform.</a></p>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

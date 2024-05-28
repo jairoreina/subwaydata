@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/static/styles.css" rel="stylesheet"/>
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet"/>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
@@ -13,9 +13,11 @@
     <div id="header-area">
         <div id="header">
             <ul>        
-                <li><img src="/static/subwaydata_logo.svg" alt="MTA Subway Data Explorer" class="logo"></li>    
-                <li><a class="active" href="templates/index.html">Explore</a></li>
-                <li><a href="templates/about.html">About the Data</a></li>
+                <li>
+                    <img src="{{ url_for('static', filename='subwaydata_logo.svg') }}" alt="MTA Subway Data Explorer" class="logo">
+                </li>    
+                <li><a class="active" href="{{ url_for('index') }}">Explore</a></li>
+                <li><a href="{{ url_for('get_about') }}">About the Data</a></li>
             </ul>
         </div>
     </div>
@@ -28,11 +30,15 @@
         <form id="query-form">
             <input type="text" id="query-input" placeholder="Enter your query..." required>
             <button type="submit" id="search-button">
-                <img src="/static/search.png" alt="Search">
+                <img src="{{ url_for('static', filename='search.png') }}" alt="Search">
             </button>
         </form>
+        <div id="instructions">
+            <p>For better results, if your query mentions a station, follow the station name with at least one train line that services that station.</p>
+            <i>Example: 'What day in 2023 did Bedford Ave (L) have the most ridership?'</i>
+        </div>
         <div id="loading-indicator" class="spinner" hidden></div>
-        <div id="results"></div>
+        <div id="results" hidden></div>
     </div>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>

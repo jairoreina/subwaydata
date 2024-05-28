@@ -3,9 +3,12 @@ document.addEventListener("DOMContentLoaded", function() {
         event.preventDefault();
         var query = document.getElementById("query-input").value;
         var loadingIndicator = document.getElementById("loading-indicator");
+        var resultsSection = document.getElementById("results");
 
         // Show the loading indicator and change its style
+        resultsSection.hidden = true;
         loadingIndicator.hidden = false;
+
 
         fetch("/query", {
             method: "POST",
@@ -14,19 +17,24 @@ document.addEventListener("DOMContentLoaded", function() {
             },
             body: JSON.stringify({ query: query })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok.")
+            }
+            return response.json();
+        })
         .then(data => {
             // Hide the loading indicator
             loadingIndicator.hidden = true;
-            document.getElementById("results").innerHTML = data.table_html;
-
-            // Move search box up
-            document.getElementById("main-container").style.marginTop = "20px";
+            resultsSection.hidden = false;
+            resultsSection.innerHTML = data.table_html;
         })
         .catch(error => {
             console.error("Error:", error);
             // Hide the loading indicator even on error
             loadingIndicator.hidden = true;
+            resultsSection.innerHTML = '<p style="text-align: center;">There was an error processing your query.<br>Make sure the query is relevant to the data and try again.</p>'
+            resultsSection.hidden = false;
         }); 
         /*setTimeout(function() {
             // Hide the loading indicator
