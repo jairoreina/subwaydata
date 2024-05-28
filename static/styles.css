@@ -1,0 +1,188 @@
+/* BODY */
+body, html {
+    height: 100%;
+    margin: 0;
+    background-color: #fff;
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+
+/* HEADER */
+#header-area {
+    background-color: #edf4ef;
+    width: 100%;
+    box-shadow: 0 4px 2px -2px #e5e5e5;
+    display: flex;
+    justify-content: center;
+}
+
+#header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 75%;
+    max-width: 1200px;
+    overflow: hidden;
+    padding: 30px;
+}
+
+#header img.logo{
+    max-width: 125px;
+    height: auto;
+}
+
+#header ul{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    margin: auto;
+}
+
+#header li {
+    margin-left: 20px;
+}
+
+#header a {
+    display: block;
+    padding: 10px;
+    color: #000000;
+    text-align: center;
+    text-decoration: none;
+    font-size: 19px;
+}
+
+#header a:hover {
+    text-decoration: underline;
+}
+
+/* MAIN CONTAINER */
+#main-container {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 50%; /* Adjusted to 75% */
+    max-width: 1200px; /* Add a max-width for larger screens */
+    margin: 0 auto; /* Center the container */
+    margin-top: 30px;
+}
+
+/* MAIN HEADER */
+#main-header {
+    width: 100%;
+}
+
+/* SEARCH BOX */
+#query-form {
+    display: flex;
+    align-items: start; /* Align items vertically */
+    position: relative; /* Set relative positioning context for the absolute button */
+    width: 100%;
+}
+  
+#query-input {
+    flex: 1; /* Fill the available space */
+    padding: 12px 45px 12px 20px; /* Add right padding to make room for the button */
+    border: 1px solid #ccc; /* Gray border */
+    border-radius: 7px; /* Rounded borders */
+    box-sizing: border-box; /* Make sure that padding and width stays in place */
+    -webkit-transition: 0.5s; /* Animation for focus transition */
+    transition: 0.3s;
+    outline: none; /* Remove the outline */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add shadow */
+}
+
+#query-input:focus {
+    border-color: #2270BD; /* Light blue border on focus */
+    box-shadow: 0 0 8px 0 #2270BD; /* Expand the shadow on focus */
+}
+  
+#search-button {
+    position: absolute;
+    right: 10px; /* Adjust as needed for padding */
+    top: 50%;
+    transform: translateY(-50%); /* Center the button vertically */
+    padding: 0; /* Remove padding if any */
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 0 20px 20px 0; /* Rounded borders on the right side */
+}
+  
+#search-button img {
+    width: 20px; 
+    height: auto;
+}
+
+/* RESULTS */
+#results {
+    align-items: center;
+    width: 100%;
+    margin-top: 30px;
+}
+
+#results table {
+    border-collapse: collapse;
+    border-radius: 7px;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    width: 90%;
+}
+
+#results th {
+    border-left: 1px solid #1a2d52;
+    border-right: 1px solid #1a2d52;
+}
+
+#results td {
+    border-left: 1px solid rgb(196, 196, 196); 
+    border-right: 1px solid rgb(196, 196, 196); 
+}
+
+#results th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+#results table thead th {
+    height: 40px;
+    background: #1a2d52;
+    color: #fff;
+    text-align: center;
+}
+
+#results tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+#results tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+
+#results tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+
+
+/* SPINNER */
+.spinner {
+    border: 3px solid #f9f9f9; /* Light grey */
+    border-top: 3px solid #000000;
+    border-radius: 50%;
+    width: 30px; /* Increased to account for border */
+    height: 30px; /* Increased to account for border */
+    box-sizing: border-box; /* This makes sure to include the border in the width/height */
+    animation: spin 1s linear infinite;
+    margin: 50px auto;
+}
+  
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+  
+.hidden {
+    display: none;
+}

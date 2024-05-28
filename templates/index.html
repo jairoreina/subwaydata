@@ -3,17 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/styles.css" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <title>Subway Data</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1>Ask about MTA subway data...</h1>
-    <form id="query-form">
-        <input type="text" id="query-input" placeholder="Enter your query" required>
-        <button type="submit">Submit</button>
-    </form>
-    <div id="results"></div>
+    <div id="header-area">
+        <div id="header">
+            <ul>        
+                <li><img src="/static/subwaydata_logo.svg" alt="MTA Subway Data Explorer" class="logo"></li>    
+                <li><a class="active" href="templates/index.html">Explore</a></li>
+                <li><a href="templates/about.html">About the Data</a></li>
+            </ul>
+        </div>
+    </div>
 
+    <div id="main-container">
+        <div id="main-header">
+            <h1>Ask any question about MTA Subway data.</h1>
+            <h2>Data for every station, down to the hour.</h2>
+        </div>
+        <form id="query-form">
+            <input type="text" id="query-input" placeholder="Enter your query..." required>
+            <button type="submit" id="search-button">
+                <img src="/static/search.png" alt="Search">
+            </button>
+        </form>
+        <div id="loading-indicator" class="spinner" hidden></div>
+        <div id="results"></div>
+    </div>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
