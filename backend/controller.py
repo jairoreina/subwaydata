@@ -1,7 +1,8 @@
 import os
 import json
+import datetime
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, insert
 from openai import OpenAI
 from thefuzz import fuzz, process
 
@@ -11,6 +12,28 @@ db_name = os.environ["SUBWAYDB_N"]
 db_user = os.environ["SUBWAYDB_U"]
 db_pass = os.environ["SUBWAYDB_P"]
 engine = create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}')
+
+def get_engine():
+    return create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}')
+
+
+def log_query(engine, user_query, initial_response_json, corrected_response_json, query_result):
+    log_entry = {
+        "user_query": user_query,
+        "initial_response_json": json.dumps(initial_response_json),
+        "corrected_response_json": json.dumps(corrected_response_json) if corrected_response_json else None,
+        "query_result": json.dumps(query_result, default=str),
+        "created_at": datetime.datetime.now(datetime.UTC).isoformat()
+    }
+    
+    insert_stmt = text("""
+        INSERT INTO query_logs (user_query, initial_response_json, corrected_response_json, query_result, created_at)
+        VALUES (:user_query, :initial_response_json, :corrected_response_json, :query_result, :created_at)
+    """)
+
+    with engine.connect() as conn:
+        conn.execute(insert_stmt, log_entry)
+        conn.commit()
 
 def make_initial_query(client, query):
     with open("initial_prompt.txt", "r") as file:
@@ -46,13 +69,18 @@ def correct_station_names(engine, response_json):
     return response_json
 
 def make_full_query(query):
-    response_json = make_initial_query(client, query)
-    if response_json["stations"]:
-        response_json = correct_station_names(engine, response_json)
-    return response_json
+    initial_response_json = make_initial_query(client, query)
+    corrected_response_json = None
+    if initial_response_json["stations"]:
+        corrected_response_json = correct_station_names(engine, initial_response_json)
+    return initial_response_json, corrected_response_json
+
 
 def get_html(response_json):
     with engine.connect() as conn:
         results = conn.execute(text(response_json["sql"]))
     query_result = results.mappings().all()
-    return pd.DataFrame(query_result).to_html(index=False)
+    query_df = pd.DataFrame(query_result)
+    html_table = query_df.to_html(index=False)
+    query_df_as_dict = query_df.to_dict()
+    return html_table, query_df_as_dict

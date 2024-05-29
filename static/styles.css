@@ -140,10 +140,6 @@ body, html {
     margin: 0 auto;
 }
 
-#results th {
-    border-left: 1px solid #1a2d52;
-    border-right: 1px solid #1a2d52;
-}
 
 #results td {
     border-left: 1px solid rgb(196, 196, 196); 
@@ -160,6 +156,8 @@ body, html {
     background: #1a2d52;
     color: #fff;
     text-align: center;
+    border-left: 1px solid #1a2d52;
+    border-right: 1px solid #1a2d52;
 }
 
 #results tbody tr {
