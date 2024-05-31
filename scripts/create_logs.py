@@ -18,9 +18,23 @@ def create_query_logs_table():
     );
     """
     with engine.connect() as conn:
-        with conn.begin():  # Begin a transaction
-            conn.execute(text(create_table_sql))
+        conn.execute(text(create_table_sql))
+        conn.commit()
+        
+def create_error_log_table():
+    create_error_table_sql = """
+    CREATE TABLE IF NOT EXISTS error_logs (
+        id SERIAL PRIMARY KEY,
+        user_query TEXT NOT NULL,
+        error_message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """
+    with engine.connect() as conn:
+        conn.execute(text(create_error_table_sql))
+        conn.commit()
         
 if __name__ == "__main__":
     create_query_logs_table()
+    create_error_log_table()
     print("Query logs table created successfully.")

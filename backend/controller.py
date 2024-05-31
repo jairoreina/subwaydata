@@ -17,13 +17,13 @@ def get_engine():
     return create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}')
 
 
-def log_query(engine, user_query, initial_response_json, corrected_response_json, query_result):
+def log_query(engine, user_query, initial_response_json, corrected_response_json, query_result, query_timestamp):
     log_entry = {
         "user_query": user_query,
         "initial_response_json": json.dumps(initial_response_json),
         "corrected_response_json": json.dumps(corrected_response_json) if corrected_response_json else None,
         "query_result": json.dumps(query_result, default=str),
-        "created_at": datetime.datetime.now(datetime.UTC).isoformat()
+        "created_at": query_timestamp
     }
     
     insert_stmt = text("""
@@ -33,6 +33,20 @@ def log_query(engine, user_query, initial_response_json, corrected_response_json
 
     with engine.connect() as conn:
         conn.execute(insert_stmt, log_entry)
+        conn.commit()
+        
+def log_error(engine, user_query, error_message, query_timestamp):
+    error_log_entry = {
+        "user_query": user_query,
+        "error_message": error_message,
+        "created_at": query_timestamp
+    }
+    insert_stmt = text("""
+        INSERT INTO error_logs (user_query, error_message, created_at)
+        VALUES (:user_query, :error_message, :created_at)
+    """)
+    with engine.connect() as conn:
+        conn.execute(insert_stmt, error_log_entry)
         conn.commit()
 
 def make_initial_query(client, query):

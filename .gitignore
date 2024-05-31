@@ -2,7 +2,9 @@ data/
 sql/
 backup/
 venv/
+notebooks/
 **/.DS_Store
 initial_prompt.txt
 *.pyc
 __pycache__/
+**/*.ipynb_checkpoints/
