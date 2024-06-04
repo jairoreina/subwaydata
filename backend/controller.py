@@ -1,20 +1,23 @@
 import os
+import re
 import json
-import datetime
 import pandas as pd
-from sqlalchemy import create_engine, text, insert
+from sqlalchemy import create_engine, text
 from openai import OpenAI
 from thefuzz import fuzz, process
 
 client = OpenAI()
 client.api_key = os.environ["OPENAI_API_KEY"]
-db_name = os.environ["SUBWAYDB_N"]
-db_user = os.environ["SUBWAYDB_U"]
-db_pass = os.environ["SUBWAYDB_P"]
-engine = create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}')
 
-def get_engine():
-    return create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}')
+def get_engine(read_only=False):
+    db_name = os.environ["SUBWAYDB_N"]
+    if not read_only:
+        db_user = os.environ["SUBWAYDB_U"]
+        db_pass = os.environ["SUBWAYDB_P"]
+    else:
+        db_user = os.environ["SUBWAYDB_RO_U"]
+        db_pass = os.environ["SUBWAYDB_RO_P"]
+    return create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}', pool_pre_ping=True, pool_recycle=3600)
 
 
 def log_query(engine, user_query, initial_response_json, corrected_response_json, query_result, query_timestamp):
@@ -32,8 +35,11 @@ def log_query(engine, user_query, initial_response_json, corrected_response_json
     """)
 
     with engine.connect() as conn:
-        conn.execute(insert_stmt, log_entry)
-        conn.commit()
+        try:
+            conn.execute(insert_stmt, log_entry)
+            conn.commit()
+        except Exception as e:
+            print(f"Failed to log query: {e}")
         
 def log_error(engine, user_query, error_message, query_timestamp):
     error_log_entry = {
@@ -46,8 +52,21 @@ def log_error(engine, user_query, error_message, query_timestamp):
         VALUES (:user_query, :error_message, :created_at)
     """)
     with engine.connect() as conn:
-        conn.execute(insert_stmt, error_log_entry)
-        conn.commit()
+        try:
+            conn.execute(insert_stmt, error_log_entry)
+            conn.commit()
+        except Exception as e:
+            print(f"Failed to log error: {e}")
+        
+def is_query_safe(query):
+    query_upper = query.upper()
+
+    forbidden_keywords = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE"]
+    for keyword in forbidden_keywords:
+        # Use regular expressions to ensure the keyword is not part of another word
+        if re.search(r'\b' + keyword + r'\b', query_upper):
+            return False
+    return True
 
 def make_initial_query(client, query):
     with open("initial_prompt.txt", "r") as file:
@@ -72,17 +91,25 @@ def make_initial_query(client, query):
 def correct_station_names(engine, response_json):
     for station in response_json["stations"]:
         if station[1]:
-            query = f"SELECT sr.*, s.station_complex FROM stations s JOIN station_routes sr ON s.station_complex_id = sr.station_complex_id WHERE route_name ILIKE '%%{station[1]}%%'"
+            query = text("""
+                SELECT sr.*, s.station_complex
+                FROM stations s
+                JOIN station_routes sr ON s.station_complex_id = sr.station_complex_id
+                WHERE route_name ILIKE :route_name
+            """)
+            params = {"route_name": f"%{station[1]}%"}
         else:
-            query = f"SELECT station_complex FROM stations"
-            
-        station_list = pd.read_sql(query, con=engine.connect())["station_complex"].tolist()
+            query = text("SELECT station_complex FROM stations")
+            params = {}
+
+        with engine.connect() as conn:
+            station_list = pd.read_sql(query, conn, params=params)["station_complex"].tolist()
         top_matches = process.extract(station[0], station_list, limit=3, scorer=fuzz.partial_token_sort_ratio)
-        #print(f"The best matches between '{station[0]}' and all stations is: {top_matches[0]}")
         response_json["sql"] = response_json["sql"].replace(station[0], top_matches[0][0])
     return response_json
 
-def make_full_query(query):
+
+def make_full_query(engine, query):
     initial_response_json = make_initial_query(client, query)
     corrected_response_json = None
     if initial_response_json["stations"]:
@@ -90,9 +117,9 @@ def make_full_query(query):
     return initial_response_json, corrected_response_json
 
 
-def get_html(response_json):
+def get_html(engine, generated_sql):
     with engine.connect() as conn:
-        results = conn.execute(text(response_json["sql"]))
+        results = conn.execute(text(generated_sql))
     query_result = results.mappings().all()
     query_df = pd.DataFrame(query_result)
     html_table = query_df.to_html(index=False)

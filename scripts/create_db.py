@@ -1,7 +1,8 @@
 import polars as pl
 from sqlalchemy import create_engine, text
-import psycopg2
 import re
+import os
+
 
 def add_dec_prec(row):
     """
@@ -149,7 +150,10 @@ def get_station_routes(stations):
 
 def main():
     print("Creating the database...")
-    engine  = create_engine('postgresql://conductor:train0109@localhost/subway')
+    db_name = os.environ["SUBWAYDB_N"]
+    db_user = os.environ["SUBWAYDB_U"]
+    db_pass = os.environ["SUBWAYDB_P"]
+    engine = create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}')
 
     with engine.connect() as conn:
         with open("sql/tables.sql", "r") as file:

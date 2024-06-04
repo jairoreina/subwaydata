@@ -1,5 +1,6 @@
 import requests
 import re
+import os
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
 import polars as pl
@@ -114,7 +115,11 @@ def main():
         df = get_data(ses)
     ridership = format_df(df)
         
-    engine = create_engine('postgresql://conductor:train0109@localhost/subway')
+    db_name = os.environ["SUBWAYDB_N"]
+    db_user = os.environ["SUBWAYDB_U"]
+    db_pass = os.environ["SUBWAYDB_P"]
+    engine = create_engine(f'postgresql://{db_user}:{db_pass}@localhost/{db_name}')
+
     with engine.connect() as conn:
         upsert_data(conn, ridership)
         conn.commit()
