@@ -60,7 +60,7 @@ body, html {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 50%; /* Adjusted to 75% */
+    width: 50%; 
     max-width: 1200px; /* Add a max-width for larger screens */
     margin: 0 auto; /* Center the container */
     margin-top: 40px;
@@ -173,7 +173,106 @@ body, html {
     background-color: #f1f1f1;
 }
 
+/* SQL SNIPPET */
+#sql-container {
+    align-items: center;
+    margin: 5px;
+    width: 90%;
+}
 
+#sql-container ul {
+    margin: 5px;
+    margin-top: 10px;
+    padding-left: 20px;
+    font-size: 15px;
+}
+
+.collapsible {
+    cursor: pointer;
+    text-align: left;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 0px;
+    list-style: none;
+    position: relative;
+}
+
+.collapsible::before {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 8px solid black;
+    border-bottom: 5px solid transparent;
+    border-top: 5px solid transparent;
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    margin: 0px;
+    transform: translateY(-50%) rotate(0deg);
+    transition: transform 0.3s ease;
+}
+
+.collapsible.open::before {
+    transform: translateY(-50%) rotate(90deg);
+}
+
+.active, .collapsible:hover {
+    text-decoration: underline;
+}
+
+pre {
+    margin: 0 auto;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    display: none;
+    background-color: #2b2b2b;
+    color: white;
+}
+
+code {
+    padding: 20px;
+    display: block;
+    white-space: pre-wrap;
+}
+
+
+pre.collapsed {
+    display: block;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+pre.expanded {
+    display: block;
+    max-height: 1000px; /* Arbitrary large value */
+    transition: max-height 0.3s ease;
+}
+
+/* SQL Actions */
+#sql-actions {
+    display: none;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+
+#sql-actions button {
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    background-color: #2b2b2b;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+#sql-actions button:hover {
+    background-color: #163065;
+}
 
 /* SPINNER */
 .spinner {

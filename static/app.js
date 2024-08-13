@@ -4,9 +4,12 @@ document.addEventListener("DOMContentLoaded", function() {
         var query = document.getElementById("query-input").value;
         var loadingIndicator = document.getElementById("loading-indicator");
         var resultsSection = document.getElementById("results");
+        var sqlContainer = document.getElementById("sql-container");
+        var sqlSnippet = document.getElementById("sql-snippet")
 
         // Show the loading indicator and change its style
         resultsSection.hidden = true;
+        sqlContainer.hidden = true;
         loadingIndicator.hidden = false;
 
 
@@ -27,7 +30,11 @@ document.addEventListener("DOMContentLoaded", function() {
             // Hide the loading indicator
             loadingIndicator.hidden = true;
             resultsSection.hidden = false;
+            sqlContainer.hidden = false;
+            sqlSnippet.textContent = data.query;
             resultsSection.innerHTML = data.table_html;
+
+            saveQueryToLocalStorage(query, data.query)
         })
         .catch(error => {
             console.error("Error:", error);
@@ -36,14 +43,49 @@ document.addEventListener("DOMContentLoaded", function() {
             resultsSection.innerHTML = '<p style="text-align: center;">There was an error processing your query.<br>Make sure the query is relevant to the data and try again.</p>'
             resultsSection.hidden = false;
         }); 
-        /*setTimeout(function() {
-            // Hide the loading indicator
-            // Populate the table with test data
-            var tableHTML = '<table border="1" class="dataframe">\n  <thead>\n    <tr style="text-align: right;">\n      <th>station_complex</th>\n      <th>station_complex_id</th>\n      <th>total_ridership</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>Bedford Av</td>\n      <td>120</td>\n      <td>75494</td>\n    </tr>\n    <tr>\n      <td>Lorimer St /Metropolitan Av</td>\n      <td>629</td>\n      <td>53014</td>\n    </tr>\n    <tr>\n      <td>Atlantic Av-Barclays Ctr</td>\n      <td>617</td>\n      <td>46526</td>\n    </tr>\n  </tbody>\n</table>';
-            document.getElementById("results").innerHTML = tableHTML;
-
-            // Move search box up
-            document.getElementById("main-container").style.marginTop = "20px";
-        }, 3000); // 3000 milliseconds = 3 seconds */
     });
 });
+
+function toggleSQL() {
+    var sqlSnippet = document.getElementById("sql-snippet");
+    var sqlBlock = document.getElementById("sql-block");
+    var sqlActions = document.getElementById("sql-actions");
+    var collapsible = document.getElementById("sql-trigger");
+
+    if (sqlSnippet.style.display === "flex") {
+        sqlSnippet.style.display = "none";
+        sqlBlock.style.display = "none";
+        sqlActions.style.display = "none";
+        collapsible.classList.remove("open");
+    } else {
+        sqlSnippet.style.display = "flex";
+        sqlBlock.style.display = "flex";
+        sqlActions.style.display = "flex";
+        collapsible.classList.add("open");
+    }
+}
+
+function copySQL() {
+    var sqlSnippet = document.getElementById("sql-snippet");
+    var range = document.createRange();
+    range.selectNode(sqlSnippet);
+    window.getSelection().removeAllRanges(); // clear current selection
+    window.getSelection().addRange(range); // to select text
+    document.execCommand("copy");
+    window.getSelection().removeAllRanges(); // to deselect
+}
+
+function saveQueryToLocalStorage(userQuery, sqlQuery) {
+    let recentQueries = JSON.parse(localStorage.getItem("recentQueries")) || [];
+
+    recentQueries.push({
+        user_query: userQuery,
+        sql_query: sqlQuery
+    });
+
+    if (recentQueries > 100) {
+        recentQueries.shift();
+    }
+    localStorage.setItem("recentQueries", JSON.stringify(recentQueries));
+}
+
