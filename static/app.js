@@ -2,49 +2,58 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("query-form").addEventListener("submit", function(event) {
         event.preventDefault();
         var query = document.getElementById("query-input").value;
-        var loadingIndicator = document.getElementById("loading-indicator");
-        var resultsSection = document.getElementById("results");
-        var sqlContainer = document.getElementById("sql-container");
-        var sqlSnippet = document.getElementById("sql-snippet")
+        sendQuery(query, false);
 
-        // Show the loading indicator and change its style
-        resultsSection.hidden = true;
-        sqlContainer.hidden = true;
-        loadingIndicator.hidden = false;
-
-
-        fetch("/query", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ query: query })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok.")
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Hide the loading indicator
-            loadingIndicator.hidden = true;
-            resultsSection.hidden = false;
-            sqlContainer.hidden = false;
-            sqlSnippet.textContent = data.query;
-            resultsSection.innerHTML = data.table_html;
-
-            saveQueryToLocalStorage(query, data.query)
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            // Hide the loading indicator even on error
-            loadingIndicator.hidden = true;
-            resultsSection.innerHTML = '<p style="text-align: center;">There was an error processing your query.<br>Make sure the query is relevant to the data and try again.</p>'
-            resultsSection.hidden = false;
-        }); 
+    document.getElementById("send-sql").addEventListener("click", function(event) {
+        event.preventDefault();
+        var query = document.getElementById("sql-snippet").innerHTML;
+        sendQuery(query, true);
+        });
     });
 });
+
+function sendQuery(query, is_sql) {
+    var loadingIndicator = document.getElementById("loading-indicator");
+    var resultsSection = document.getElementById("results");
+    var sqlContainer = document.getElementById("sql-container");
+    var sqlSnippet = document.getElementById("sql-snippet")
+
+    // Show the loading indicator and change its style
+    resultsSection.hidden = true;
+    sqlContainer.hidden = true;
+    loadingIndicator.hidden = false;
+
+    fetch("/query", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ query: query, is_sql_only: is_sql })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok.")
+        }
+        return response.json();
+    }).then(data => {
+        // Hide the loading indicator
+        loadingIndicator.hidden = true;
+        resultsSection.hidden = false;
+        sqlContainer.hidden = false;
+        sqlSnippet.textContent = data.query;
+        resultsSection.innerHTML = data.table_html;
+
+        saveQueryToLocalStorage(query, data.query)
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        // Hide the loading indicator even on error
+        loadingIndicator.hidden = true;
+        resultsSection.innerHTML = '<p style="text-align: center;">There was an error processing your query.<br>Make sure the query is relevant to the data and try again.</p>'
+        resultsSection.hidden = false;
+    }); 
+}
+
 
 function toggleSQL() {
     var sqlSnippet = document.getElementById("sql-snippet");

@@ -122,6 +122,7 @@ def get_html(engine, generated_sql):
         results = conn.execute(text(generated_sql))
     query_result = results.mappings().all()
     query_df = pd.DataFrame(query_result)
+    query_df.columns = [column.replace("_", " ").upper() for column in query_df.columns]
     html_table = query_df.to_html(index=False)
     query_df_as_dict = query_df.to_dict()
     return html_table, query_df_as_dict

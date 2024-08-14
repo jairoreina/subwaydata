@@ -19,10 +19,17 @@ def get_query_response():
         read_write_engine = get_engine(read_only=False)
         
         query = request.json["query"]
+        print(query)
+        is_sql_only = request.json.get("is_sql_only", False)
         query_timestamp = datetime.datetime.now(datetime.UTC).isoformat()
-        initial_response_json, corrected_response_json = make_full_query(read_only_engine, query)
         
-        generated_sql = corrected_response_json["sql"] if corrected_response_json else initial_response_json["sql"]
+        if is_sql_only:
+            generated_sql = query
+            initial_response_json = "SQL only mode"
+            corrected_response_json = "SQL only mode"
+        else:
+            initial_response_json, corrected_response_json = make_full_query(read_only_engine, query)
+            generated_sql = corrected_response_json["sql"] if corrected_response_json else initial_response_json["sql"]
 
         if not is_query_safe(generated_sql):
             raise ValueError("Generated query is not safe to execute.")
